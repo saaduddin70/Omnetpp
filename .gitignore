@@ -91,3 +91,8 @@ current_files.txt
 # !src/Modules/*.ned
 # !simulations/*.ned
 # !simulations/*.ini
+"Makefile" 
+"*.txt" 
+".qtenvrc" 
+".oppbuildspec" 
+".nedexclusions" 

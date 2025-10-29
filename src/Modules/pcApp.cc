@@ -524,11 +524,12 @@
 
 
 
-//Claude
 
 #include <omnetpp.h>
 #include "helpers.h"
 #include <map>
+#include <sstream>      // ADD THIS LINE
+#include <iomanip>      // ADD THIS LINE
 
 using namespace omnetpp;
 
@@ -556,6 +557,12 @@ private:
     int httpRequests = 0;
     int emailsSent = 0;
     int dbQueries = 0;
+
+    // Encryption statistics (ADD THESE)
+        int messagesEncrypted = 0;
+        int messagesDecrypted = 0;
+        int totalBytesEncrypted = 0;
+        int totalBytesDecrypted = 0;
 
 protected:
     void initialize() override {
@@ -609,8 +616,59 @@ protected:
                     dnsQueries++;
                     appState = 1;
                 }
+//                else if (appState == 1) {
+//                    // === DATABASE QUERY ===
+//                    if (dbPrimaryIP == 0 && dbSecondaryIP == 0) {
+//                        EV << "⚠️  PC " << address << ": DB সার্ভার IP এখনো পাওয়া যায়নি\n";
+//                        appState = 2;
+//                    } else {
+//                        bool usePrimary = (uniform(0, 1) < 0.3);
+//                        long targetDB = usePrimary ? dbPrimaryIP : dbSecondaryIP;
+//                        int targetAddr = usePrimary ? 20 : 21;
+//
+//                        long accountId = 1000 + (address % 100);
+//                        bool isWrite = (uniform(0, 1) < 0.2);
+//
+//                        if (isWrite && !usePrimary) {
+//                            targetDB = dbPrimaryIP;
+//                            targetAddr = 20;
+//                        }
+//
+//                        if (isWrite) {
+//                            EV << "\n========================================\n";
+//                            EV << "→ PC " << address << ": DB WRITE [via TCP]\n";
+//                            EV << "========================================\n";
+//                            EV << "Target: PRIMARY DB\n";
+//                            EV << "Account ID: " << accountId << "\n";
+//                            EV << "========================================\n\n";
+//
+//                            auto *writeQuery = mk("DB_WRITE", DB_QUERY_WRITE, address, targetAddr);
+//                            writeQuery->par("srcIP") = myIP;
+//                            writeQuery->par("dstIP") = targetDB;
+//                            writeQuery->par("accountId") = accountId;
+//                            writeQuery->par("amount") = intuniform(1000, 5000);
+//                            writeQuery->par("queryType") = "WITHDRAW";
+//                            send(writeQuery, "tcpOut");
+//                        } else {
+//                            EV << "\n========================================\n";
+//                            EV << "→ PC " << address << ": DB READ [via TCP]\n";
+//                            EV << "========================================\n";
+//                            EV << "Target: " << (usePrimary ? "PRIMARY" : "SECONDARY") << " DB\n";
+//                            EV << "Account ID: " << accountId << "\n";
+//                            EV << "========================================\n\n";
+//
+//                            auto *readQuery = mk("DB_READ", DB_QUERY_READ, address, targetAddr);
+//                            readQuery->par("srcIP") = myIP;
+//                            readQuery->par("dstIP") = targetDB;
+//                            readQuery->par("accountId") = accountId;
+//                            send(readQuery, "tcpOut");
+//                        }
+//                        dbQueries++;
+//                        appState = 2;
+//                    }
+//                }
                 else if (appState == 1) {
-                    // === DATABASE QUERY ===
+                    // === DATABASE QUERY WITH ENCRYPTION ===
                     if (dbPrimaryIP == 0 && dbSecondaryIP == 0) {
                         EV << "⚠️  PC " << address << ": DB সার্ভার IP এখনো পাওয়া যায়নি\n";
                         appState = 2;
@@ -627,32 +685,80 @@ protected:
                             targetAddr = 20;
                         }
 
+                        // ============ ENCRYPTION STARTS HERE ============
+
+                        // Prepare plaintext query data - EXPLICIT METHOD
+                        char buffer[256];
+                        snprintf(buffer, sizeof(buffer),
+                                 "ACCOUNT:%ld|TYPE:%s|TIME:%.6f",
+                                 accountId,
+                                 (isWrite ? "WRITE" : "READ"),
+                                 simTime().dbl());
+
+                        std::string plaintext(buffer);
+
+                        // Debug verification
+                        EV << "🔍 DEBUG - Plaintext verification:\n";
+                        EV << "   Raw: [" << plaintext << "]\n";
+                        EV << "   Length: " << plaintext.length() << " bytes\n";
+                        EV << "   Account ID in string: " << accountId << "\n\n";
+
+                        // Encrypt the payload
+                        std::string encrypted = xorEncrypt(plaintext);
+
+                        // Update statistics
+                        messagesEncrypted++;
+                        totalBytesEncrypted += plaintext.length();
+
+                        // ============ ENCRYPTION ENDS HERE ============
+
+
                         if (isWrite) {
                             EV << "\n========================================\n";
-                            EV << "→ PC " << address << ": DB WRITE [via TCP]\n";
+                            EV << "🔒 DB WRITE (ENCRYPTED) [via TCP]\n";
                             EV << "========================================\n";
+                            EV << "PC: " << address << "\n";
                             EV << "Target: PRIMARY DB\n";
                             EV << "Account ID: " << accountId << "\n";
+                            EV << "Plaintext: " << plaintext << "\n";
+                            EV << "Encrypted (Hex): " << toHex(encrypted) << "\n";
+                            EV << "Encryption Count: " << messagesEncrypted << "\n";
                             EV << "========================================\n\n";
 
                             auto *writeQuery = mk("DB_WRITE", DB_QUERY_WRITE, address, targetAddr);
                             writeQuery->par("srcIP") = myIP;
                             writeQuery->par("dstIP") = targetDB;
-                            writeQuery->par("accountId") = accountId;
+                            writeQuery->par("payload").setStringValue(encrypted.c_str());  // ENCRYPTED
+                            writeQuery->addPar("encrypted") = true;              // FLAG
+                            writeQuery->par("accountId") = accountId;         // For routing
                             writeQuery->par("amount") = intuniform(1000, 5000);
-                            writeQuery->par("queryType") = "WITHDRAW";
+                            writeQuery->par ("queryType") = "WITHDRAW";
                             send(writeQuery, "tcpOut");
                         } else {
                             EV << "\n========================================\n";
-                            EV << "→ PC " << address << ": DB READ [via TCP]\n";
+                            EV << "🔒 DB READ (ENCRYPTED) [via TCP]\n";
                             EV << "========================================\n";
+                            EV << "PC: " << address << "\n";
                             EV << "Target: " << (usePrimary ? "PRIMARY" : "SECONDARY") << " DB\n";
                             EV << "Account ID: " << accountId << "\n";
+                            EV << "Plaintext: " << plaintext << "\n";
+                            EV << "Encrypted (Hex): " << toHex(encrypted) << "\n";
+                            EV << "Encryption Count: " << messagesEncrypted << "\n";
                             EV << "========================================\n\n";
 
+//                            auto *readQuery = mk("DB_READ", DB_QUERY_READ, address, targetAddr);
+//                            readQuery->par("srcIP") = myIP;
+//                            readQuery->par("dstIP") = targetDB;
+//                            readQuery->par("payload") = encrypted.c_str();  // ENCRYPTED
+//                            readQuery->par("encrypted") = true;              // FLAG
+//                            readQuery->par("accountId") = accountId;         // For routing
+//                            send(readQuery, "tcpOut");
                             auto *readQuery = mk("DB_READ", DB_QUERY_READ, address, targetAddr);
-                            readQuery->par("srcIP") = myIP;
+                            readQuery->par("srcIP") = myIP;                    // Use addPar
                             readQuery->par("dstIP") = targetDB;
+//                            readQuery->par("payload") = encrypted.c_str();     // ADD
+                            readQuery->par("payload").setStringValue(encrypted.c_str());
+                            readQuery->addPar("encrypted") = true;                 // ADD
                             readQuery->par("accountId") = accountId;
                             send(readQuery, "tcpOut");
                         }
@@ -753,13 +859,107 @@ protected:
                     }
                 }
             }
+//            else if (kind == DB_RESPONSE_SUCCESS) {
+//                // === DB সফল রেসপন্স ===
+//                long accountId = ACCOUNT_ID(msg);
+//                long balance = AMOUNT(msg);
+//                EV << "✓ PC " << address << ": DB RESPONSE - Account " << accountId
+//                   << " balance: " << balance << " BDT\n";
+//            }
+//            else if (kind == DB_RESPONSE_SUCCESS) {
+//                // === DB সফল রেসপন্স (ENCRYPTED) ===
+//
+//                // Check if response is encrypted
+//                if (msg->hasPar("encrypted") && msg->par("encrypted").boolValue()) {
+//
+//                    std::string encryptedResponse = msg->par("payload").stringValue();
+//
+//                    // ============ DECRYPTION STARTS HERE ============
+//                    std::string plainResponse = xorDecrypt(encryptedResponse);
+//
+//                    // Update statistics
+//                    messagesDecrypted++;
+//                    totalBytesDecrypted += plainResponse.length();
+//                    // ============ DECRYPTION ENDS HERE ============
+//
+//                    EV << "\n========================================\n";
+//                    EV << "🔓 DB RESPONSE (DECRYPTED)\n";
+//                    EV << "========================================\n";
+//                    EV << "PC: " << address << "\n";
+//                    EV << "Encrypted (Hex): " << toHex(encryptedResponse) << "\n";
+//                    EV << "Decrypted: " << plainResponse << "\n";
+//                    EV << "Decryption Count: " << messagesDecrypted << "\n";
+//                    EV << "========================================\n\n";
+//
+//                    // Parse account and balance from decrypted data
+//                    EV << "✓ Query completed successfully\n";
+//                } else {
+//                    // Fallback: Old unencrypted format
+//                    long accountId = ACCOUNT_ID(msg);
+//                    long balance = AMOUNT(msg);
+//                    EV << "✓ PC " << address << ": DB RESPONSE - Account " << accountId
+//                       << " balance: " << balance << " BDT\n";
+//                }
+//            }
             else if (kind == DB_RESPONSE_SUCCESS) {
-                // === DB সফল রেসপন্স ===
-                long accountId = ACCOUNT_ID(msg);
-                long balance = AMOUNT(msg);
-                EV << "✓ PC " << address << ": DB RESPONSE - Account " << accountId
-                   << " balance: " << balance << " BDT\n";
+                // === DB সফল রেসপন্স (ENCRYPTED) ===
+
+                // Check if response is encrypted
+                if (msg->hasPar("encrypted") && msg->par("encrypted").boolValue()) {
+
+                    // ✅ Check if payload exists
+                    if (!msg->hasPar("payload")) {
+                        EV << "❌ ERROR: No 'payload' parameter found!\n";
+                        delete msg;
+                        return;
+                    }
+
+                    std::string encryptedResponse = msg->par("payload").stringValue();
+
+                    // ✅ Check if encrypted data is valid
+                    if (encryptedResponse.empty()) {
+                        EV << "❌ ERROR: Encrypted response is EMPTY!\n";
+                        delete msg;
+                        return;
+                    }
+
+                    // ============ DECRYPTION STARTS HERE ============
+                    std::string plainResponse = xorDecrypt(encryptedResponse);  // ✅ XOR_KEY automatically used
+
+                    // ✅ Check if decryption worked
+                    if (plainResponse.empty()) {
+                        EV << "❌ ERROR: Decrypted response is EMPTY!\n";
+                        delete msg;
+                        return;
+                    }
+
+                    // Update statistics
+                    messagesDecrypted++;
+                    totalBytesDecrypted += plainResponse.length();
+                    // ============ DECRYPTION ENDS HERE ============
+
+                    EV << "\n========================================\n";
+                    EV << "🔓 DB RESPONSE (DECRYPTED)\n";
+                    EV << "========================================\n";
+                    EV << "PC: " << address << "\n";
+                    EV << "Encrypted Length: " << encryptedResponse.length() << " bytes\n";
+                    EV << "Encrypted (Hex): " << toHex(encryptedResponse) << "\n";
+                    EV << "Decrypted Length: " << plainResponse.length() << " bytes\n";
+                    EV << "Decrypted: " << plainResponse << "\n";
+                    EV << "Decryption Count: " << messagesDecrypted << "\n";
+                    EV << "========================================\n\n";
+
+                    // Parse account and balance from decrypted data
+                    EV << "✓ Query completed successfully\n";
+                } else {
+                    // Fallback: Old unencrypted format
+                    long accountId = ACCOUNT_ID(msg);
+                    long balance = AMOUNT(msg);
+                    EV << "✓ PC " << address << ": DB RESPONSE - Account " << accountId
+                       << " balance: " << balance << " BDT\n";
+                }
             }
+
             else if (kind == DB_RESPONSE_ERROR) {
                 // === DB এরর ===
                 std::string error = PAYLOAD(msg);
@@ -789,10 +989,23 @@ protected:
         EV << "Emails Sent: " << emailsSent << "\n";
         EV << "========================================\n\n";
 
+        // Encryption
+        EV << "\n🔒 ENCRYPTION STATISTICS:\n";
+        EV << "----------------------------------------\n";
+        EV << "Messages Encrypted: " << messagesEncrypted << "\n";
+        EV << "Messages Decrypted: " << messagesDecrypted << "\n";
+        EV << "Bytes Encrypted: " << totalBytesEncrypted << " bytes\n";
+        EV << "Bytes Decrypted: " << totalBytesDecrypted << " bytes\n";
+        EV << "========================================\n\n";
+
         recordScalar("DNS Queries", dnsQueries);
         recordScalar("DB Queries", dbQueries);
         recordScalar("HTTP Requests", httpRequests);
         recordScalar("Emails Sent", emailsSent);
+
+        // Encryption
+        recordScalar("Messages Encrypted", messagesEncrypted);
+        recordScalar("Messages Decrypted", messagesDecrypted);
 
         if (appTestTimer && appTestTimer->isScheduled()) {
             cancelAndDelete(appTestTimer);

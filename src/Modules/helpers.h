@@ -4,6 +4,8 @@
 #include <omnetpp.h>
 #include <string>
 #include <map>
+#include <sstream>
+#include <iomanip>
 
 // ==================== TCP MESSAGE TYPES ====================
 #define TCP_SYN         100
@@ -38,6 +40,15 @@
 #define TCP_WINDOW(msg)     (msg->par("window").longValue())
 #define TCP_SRC_PORT(msg)   (msg->par("srcPort").longValue())
 #define TCP_DEST_PORT(msg)  (msg->par("destPort").longValue())
+
+
+// Additional helper macros for encryption
+#define OFFERED_IP(msg) (msg->par("offeredIP").longValue())
+#define REQUESTED_NAME(msg) (msg->par("requestedName").stringValue())
+#define ACCOUNT_ID(msg) (msg->par("accountId").longValue())
+#define AMOUNT(msg) (msg->par("amount").longValue())
+#define QUERY_TYPE(msg) (msg->par("queryType").stringValue())
+#define PAYLOAD(msg) (msg->par("payload").stringValue())
 
 using namespace omnetpp;
 
@@ -115,36 +126,6 @@ static inline int VLAN(cMessage* m) {
     return m->hasPar("vlanId") ? m->par("vlanId").longValue() : 0;
 }
 
-static inline long OFFERED_IP(cMessage* m) {
-    return m->hasPar("offeredIP") ? m->par("offeredIP").longValue() : 0;
-}
-
-static inline std::string REQUESTED_NAME(cMessage* m) {
-    if (!m->hasPar("requestedName")) return "";
-    const char* val = m->par("requestedName").stringValue();
-    return val ? std::string(val) : "";
-}
-
-static inline std::string PAYLOAD(cMessage* m) {
-    if (!m->hasPar("payload")) return "";
-    const char* val = m->par("payload").stringValue();
-    return val ? std::string(val) : "";
-}
-
-// NEW: DB-specific getters
-static inline std::string QUERY_TYPE(cMessage* m) {
-    if (!m->hasPar("queryType")) return "";
-    const char* val = m->par("queryType").stringValue();
-    return val ? std::string(val) : "";
-}
-
-static inline long ACCOUNT_ID(cMessage* m) {
-    return m->hasPar("accountId") ? m->par("accountId").longValue() : 0;
-}
-
-static inline long AMOUNT(cMessage* m) {
-    return m->hasPar("amount") ? m->par("amount").longValue() : 0;
-}
 
 // IP converter
 static std::string ipToStr(long ip) {
@@ -184,4 +165,35 @@ static inline cMessage* MK_TCP(const char *name, int kind, int src, int dst,
     return msg;
 }
 
-#endif
+// ==================== XOR ENCRYPTION MODULE ====================
+
+#define XOR_KEY 0xAB  // Encryption key
+
+// XOR Encrypt function
+inline std::string xorEncrypt(const std::string& data, unsigned char key = XOR_KEY) {
+    std::string result = data;
+    for (size_t i = 0; i < result.length(); i++) {
+        result[i] ^= key;
+    }
+    return result;
+}
+
+// XOR Decrypt function (same as encrypt due to XOR property)
+inline std::string xorDecrypt(const std::string& data, unsigned char key = XOR_KEY) {
+    return xorEncrypt(data, key);
+}
+
+// Convert string to hex for display
+inline std::string toHex(const std::string& data, size_t maxLen = 16) {
+    std::stringstream ss;
+    ss << std::hex << std::setfill('0');
+    size_t len = (data.length() < maxLen) ? data.length() : maxLen;
+    for (size_t i = 0; i < len; i++) {
+        ss << std::setw(2) << (int)(unsigned char)data[i];
+        if (i < len - 1) ss << " ";
+    }
+    if (data.length() > maxLen) ss << "...";
+    return ss.str();
+}
+
+#endif /* HELPERS_H_ */

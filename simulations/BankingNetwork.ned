@@ -199,8 +199,10 @@ import zpractive.Modules.DNSServer;
 import zpractive.Modules.MailServer;
 import zpractive.Modules.WebServer;
 import zpractive.Modules.DatabaseServer;
+import zpractive.Modules.AttackerNode;
 
-network BankingNetwork {
+network BankingNetwork
+{
     submodules:
         // HQ Core Infrastructure
         coreRouter: Router {
@@ -260,14 +262,46 @@ network BankingNetwork {
         }
 
         // Branch A Devices (NOW COMPOUND MODULES - TCP inside!)
-        workstationA1: PC { address = 111; vlanId = 10; @display("p=50,600"); }
-        workstationA2: PC { address = 112; vlanId = 10; @display("p=120,600"); }
-        workstationA3: PC { address = 113; vlanId = 10; @display("p=190,600"); }
-        terminalA1: PC { address = 114; vlanId = 10; @display("p=260,600"); }
-        terminalA2: PC { address = 115; vlanId = 10; @display("p=330,600"); }
-        terminalA3: PC { address = 116; vlanId = 10; @display("p=400,600"); }
-        printServerA1: PC { address = 117; vlanId = 10; @display("p=50,670"); }
-        printServerA2: PC { address = 118; vlanId = 10; @display("p=120,670"); }
+        workstationA1: PC {
+            address = 111;
+            vlanId = 10;
+            @display("p=50,600");
+        }
+        workstationA2: PC {
+            address = 112;
+            vlanId = 10;
+            @display("p=120,600");
+        }
+        workstationA3: PC {
+            address = 113;
+            vlanId = 10;
+            @display("p=190,600");
+        }
+        terminalA1: PC {
+            address = 114;
+            vlanId = 10;
+            @display("p=260,600");
+        }
+        terminalA2: PC {
+            address = 115;
+            vlanId = 10;
+            @display("p=330,600");
+        }
+        terminalA3: PC {
+            address = 116;
+            vlanId = 10;
+            @display("p=400,600");
+        }
+        printServerA1: PC {
+            address = 117;
+            vlanId = 10;
+            @display("p=50,670");
+        }
+        printServerA2: PC {
+            address = 118;
+            vlanId = 10;
+            @display("p=120,670");
+        }
 
         // Branch B Infrastructure
         branchB_Router: Router {
@@ -281,14 +315,46 @@ network BankingNetwork {
         }
 
         // Branch B Devices (NOW COMPOUND MODULES - TCP inside!)
-        workstationB1: PC { address = 211; vlanId = 20; @display("p=550,900"); }
-        workstationB2: PC { address = 212; vlanId = 20; @display("p=620,900"); }
-        workstationB3: PC { address = 213; vlanId = 20; @display("p=690,900"); }
-        terminalB1: PC { address = 214; vlanId = 20; @display("p=760,900"); }
-        terminalB2: PC { address = 215; vlanId = 20; @display("p=830,900"); }
-        terminalB3: PC { address = 216; vlanId = 20; @display("p=900,900"); }
-        printServerB1: PC { address = 217; vlanId = 20; @display("p=550,970"); }
-        printServerB2: PC { address = 218; vlanId = 20; @display("p=620,970"); }
+        workstationB1: PC {
+            address = 211;
+            vlanId = 20;
+            @display("p=550,900");
+        }
+        workstationB2: PC {
+            address = 212;
+            vlanId = 20;
+            @display("p=620,900");
+        }
+        workstationB3: PC {
+            address = 213;
+            vlanId = 20;
+            @display("p=690,900");
+        }
+        terminalB1: PC {
+            address = 214;
+            vlanId = 20;
+            @display("p=760,900");
+        }
+        terminalB2: PC {
+            address = 215;
+            vlanId = 20;
+            @display("p=830,900");
+        }
+        terminalB3: PC {
+            address = 216;
+            vlanId = 20;
+            @display("p=900,900");
+        }
+        printServerB1: PC {
+            address = 217;
+            vlanId = 20;
+            @display("p=550,970");
+        }
+        printServerB2: PC {
+            address = 218;
+            vlanId = 20;
+            @display("p=620,970");
+        }
 
         // Branch C Infrastructure
         branchC_Router: Router {
@@ -302,14 +368,50 @@ network BankingNetwork {
         }
 
         // Branch C Devices (NOW COMPOUND MODULES - TCP inside!)
-        workstationC1: PC { address = 311; vlanId = 30; @display("p=1050,600"); }
-        workstationC2: PC { address = 312; vlanId = 30; @display("p=1120,600"); }
-        workstationC3: PC { address = 313; vlanId = 30; @display("p=1190,600"); }
-        terminalC1: PC { address = 314; vlanId = 30; @display("p=1260,600"); }
-        terminalC2: PC { address = 315; vlanId = 30; @display("p=1330,600"); }
-        terminalC3: PC { address = 316; vlanId = 30; @display("p=1400,600"); }
-        printServerC1: PC { address = 317; vlanId = 30; @display("p=1050,670"); }
-        printServerC2: PC { address = 318; vlanId = 30; @display("p=1120,670"); }
+        workstationC1: PC {
+            address = 311;
+            vlanId = 30;
+            @display("p=1050,600");
+        }
+        workstationC2: PC {
+            address = 312;
+            vlanId = 30;
+            @display("p=1120,600");
+        }
+        workstationC3: PC {
+            address = 313;
+            vlanId = 30;
+            @display("p=1190,600");
+        }
+        terminalC1: PC {
+            address = 314;
+            vlanId = 30;
+            @display("p=1260,600");
+        }
+        terminalC2: PC {
+            address = 315;
+            vlanId = 30;
+            @display("p=1330,600");
+        }
+        terminalC3: PC {
+            address = 316;
+            vlanId = 30;
+            @display("p=1400,600");
+        }
+        printServerC1: PC {
+            address = 317;
+            vlanId = 30;
+            @display("p=1050,670");
+        }
+        printServerC2: PC {
+            address = 318;
+            vlanId = 30;
+            @display("p=1120,670");
+        }
+
+        attackerNode: AttackerNode {
+            @display("p=726,488;i=block/control,red");
+        }
 
     connections:
         // HQ Core to Servers via PPP (TCP is INSIDE the compound modules!)
@@ -325,7 +427,13 @@ network BankingNetwork {
 
         // Core Router to Branch Routers via PPP
         coreRouter.ppp++ <--> branchA_Router.ppp++;
-        coreRouter.ppp++ <--> branchB_Router.ppp++;
+        //coreRouter.ppp++ <--> branchB_Router.ppp++;
+//        coreRouter.ppp++ <--> attackerNode.port++;
+//        attackerNode.port++ <--> branchB_Router.ppp++;
+		coreRouter.ppp++ <--> {delay = 1ms;} <--> attackerNode.port++;
+    	attackerNode.port++ <--> {delay = 1ms;} <--> branchB_Router.ppp++;
+	
+
         coreRouter.ppp++ <--> branchC_Router.ppp++;
 
         // Branch A connections
