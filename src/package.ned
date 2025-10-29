@@ -1,0 +1,3 @@
+package zpractive;
+
+@license(LGPL);

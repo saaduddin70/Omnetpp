@@ -1,0 +1,93 @@
+# ==================== OMNeT++ Specific ====================
+
+# Build directories
+/clang-release/
+/gcc-release/
+/gcc-debug/
+/out/
+/results/
+
+# Compiled files
+*.o
+*.d
+*.so
+*.dll
+*.exe
+*.a
+*.lib
+
+# Build logs
+*.log
+build.log
+build_output.log
+
+# Makefiles (generated)
+Makefile.*
+src/Makefile.*
+src_backup/Makefile.*
+
+# ==================== IDE Specific ====================
+
+# Eclipse metadata
+.metadata/
+.settings/
+.cproject
+.project
+.pydevproject
+.nedfolders
+
+# VS Code
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# ==================== Backup Files ====================
+
+*_backup/
+*.backup
+*.bak
+*.tmp
+*~
+
+# ==================== OS Specific ====================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# ==================== Simulation Results ====================
+
+# Result files (optional - comment out if you want to include)
+*.vec
+*.sca
+*.vci
+*.log
+results/
+
+# ==================== Temporary Files ====================
+
+*.swp
+*.swo
+*.swn
+.*.swp
+current_files.txt
+
+# ==================== Keep These ====================
+# Important source files to KEEP:
+# !src/Modules/*.cc
+# !src/Modules/*.h
+# !src/Modules/*.ned
+# !simulations/*.ned
+# !simulations/*.ini
